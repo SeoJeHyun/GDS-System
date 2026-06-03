@@ -3,18 +3,28 @@ package dao;
 import entity.PaymentEntity;
 import gds.Payment;
 import java.sql.*;
+import java.util.List;
 
 public class PaymentDAOImpl implements PaymentDAO {
     private final Connection conn;
-    public PaymentDAOImpl(Connection conn) { this.conn = conn; }
+
+    public PaymentDAOImpl(Connection conn) { 
+        this.conn = conn; 
+    }
 
     @Override
     public void save(Payment payment) {
         String sql = "INSERT INTO payments (payment_id, purchase_id, payment_method_id, amount, payment_status) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            // 여기에 payment 객체의 필드를 바인딩하는 코드를 작성하세요.
+            pstmt.setString(1, payment.getPaymentId());
+            pstmt.setString(2, payment.getPurchaseId());
+            pstmt.setString(3, payment.getPaymentMethodId());
+            pstmt.setInt(4, payment.getAmount());
+            pstmt.setString(5, "READY");
             pstmt.executeUpdate();
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) { 
+            e.printStackTrace(); 
+        }
     }
 
     @Override
@@ -24,9 +34,13 @@ public class PaymentDAOImpl implements PaymentDAO {
             pstmt.setString(1, status);
             pstmt.setString(2, paymentId);
             pstmt.executeUpdate();
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) { 
+            e.printStackTrace(); 
+        }
     }
     
-    // findByPurchaseId 등은 필요에 따라 추가 구현
-    @Override public java.util.List<Payment> findByPurchaseId(String purchaseId) { return null; }
+    @Override 
+    public List<Payment> findByPurchaseId(String purchaseId) { 
+        return null; 
+    }
 }

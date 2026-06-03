@@ -3,6 +3,7 @@ package dao;
 import entity.PurchaseEntity;
 import gds.Purchase;
 import java.sql.*;
+import java.util.List;
 
 public class PurchaseDAOImpl implements PurchaseDAO {
     private final Connection conn;
@@ -13,7 +14,6 @@ public class PurchaseDAOImpl implements PurchaseDAO {
 
     @Override
     public void save(Purchase purchase) {
-        // SQL 문장을 한 줄로 깔끔하게 연결했습니다.
         String sql = "INSERT INTO purchases (purchase_id, user_id, total_amount, purchase_status) VALUES (?, ?, ?, ?)";
         
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -35,17 +35,19 @@ public class PurchaseDAOImpl implements PurchaseDAO {
             pstmt.setString(1, status);
             pstmt.setString(2, purchaseId);
             pstmt.executeUpdate();
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
-    // 인터페이스 규격을 맞추기 위해 필수적인 나머지 메서드들
+    // 인터페이스 규격을 맞추기 위한 메서드
     @Override
     public Purchase findById(String purchaseId) {
-        return null; // 필요시 구현
+        return null; 
     }
 
     @Override
-    public java.util.List<Purchase> findByUserId(String userId) {
-        return null; // 필요시 구현
+    public List<Purchase> findByUserId(String userId) {
+        return null; 
     }
 }

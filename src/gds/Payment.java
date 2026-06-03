@@ -36,4 +36,11 @@ public class Payment {
         return new Payment(entity.getPaymentId(), entity.getPurchaseId(), 
                            entity.getPaymentMethodId(), entity.getAmount(), entity.getPaymentStatus(), dao);
     }
+
+    // --- DAO가 DB 저장을 위해 값을 읽어갈 수 있도록 Getter 추가 ---
+    public String getPaymentId() { return paymentId; }
+    public String getPurchaseId() { return purchaseId; }
+    public String getPaymentMethodId() { return paymentMethodId; }
+    public int getAmount() { return amount; }
+    public String getStatus() { return status; }
 }

@@ -37,4 +37,10 @@ public class Purchase {
     public static Purchase toDomain(PurchaseEntity entity, PurchaseDAO dao) {
         return new Purchase(entity.getPurchaseId(), entity.getUserId(), entity.getTotalAmount(), entity.getPurchaseStatus(), dao);
     }
+
+    // --- DAO가 DB 저장을 위해 값을 읽어갈 수 있도록 Getter 추가 ---
+    public String getPurchaseId() { return purchaseId; }
+    public String getUserId() { return userId; }
+    public int getTotalAmount() { return totalAmount; }
+    public String getStatus() { return status; }
 }
