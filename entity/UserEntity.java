@@ -2,7 +2,7 @@ package entity;
 
 public abstract class UserEntity {
     private String userId;
-    private String password; // DB와 직접 닿아있으므로 비밀번호 포함
+    private String password;
     private String name;
 
     public UserEntity(String userId, String password, String name) {

@@ -1,29 +1,31 @@
 package gds;
 
-/*
-1. 가변 필드 허용
-- department 필드의 final 키워드 제거(부서 이동 반영이 가능하도록 하기 위함)
-- updateDepartment 등의 수정 메서드 추가
+import dao.UserDAO;
+import dto.AdministratorDTO;
+import dto.UserDTO;
 
-2. 타입 안정성 및 DB 저장 최적화 (Enum 도입)
-- GConstant 내부의 UserType String 상수들을 독립적인 enum 클래스로 분리할 것
-- 자바 코드의 가독성을 챙기고, 실제 DB에 저장할 때는 용량 최적화를 위해 "NG", "MG", "DP", "AD" 등의
- 두자리 코드로 매핑되도록 처리
-*/ 
 public class Administrator extends User {
-    private final String department;
+    private String department;
 
-    public Administrator(String userId, String password, String name, String department) {
-        super(userId, password, name);
+    public Administrator(String userId, String name, String department, UserDAO userDAO) {
+        super(userId, name, userDAO);
         this.department = department;
     }
 
-    public String getDepartment() {
-        return department;
+    public String getDepartment() { return department; }
+
+    public void updateDepartment(String newDepartment) {
+        this.department = newDepartment;
+        this.userDAO.update(this);
     }
 
     @Override
     public String getUserType() {
         return GConstant.UserType.ADMINISTRATOR;
+    }
+
+    @Override
+    public UserDTO toDTO() {
+        return new AdministratorDTO(this.userId, this.name, getUserType(), this.department);
     }
 }
