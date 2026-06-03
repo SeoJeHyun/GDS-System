@@ -1,49 +1,62 @@
 package gds;
 
-//Developer, NonMemberGamer, MemberGamer, Administrator의 부모 클래스
-//생성시에 userId, password, name을 저장
+import dao.UserDAO; // 1단계에서 만든 인터페이스 임포트
 
-/*
-1. 식별자 분리( 보안 및 DB 연동)
-- 사용자가 입력하는 '로그인용 ID'와 시스템 내부에서 쓰는 '고유 PK(UID)'를 엄격히 분리할 것
-- DB 연동을 위해 불변하는 재부 식별자(ex. Long id, UUID) 필드의 추가 필요
-
-2. 가변 필드 전환(데이터 수정 허용) 
-- DB 데이터 업데이트를 반영할 수 있도록 password, name 필드의 final 제거
-
-3. 비밀번호 보안 강화
-- checkPassword() 로직을 강화해야 함
-
-4. 세션/토큰 기반 인증 준비
-- 향후 클라이언트 서버 간 코드 분리 후 임의의 UID 조작을 방지하고자 로그인 성공 시
-session ID 또는 JWT 검증 과정을 실시
-*/
 public abstract class User {
     private final String userId;
-    private final String password;
-    private final String name;
+    private String name;
+    
+    // 💡 유저님이 선택하신 '객체 내부 DAO 유지' (자식 클래스도 쓰도록 protected)
+    protected final UserDAO userDAO; 
 
-    public User(String userId, String password, String name) {
+    // 💡 생성자를 통한 강제 주입
+    public User(String userId, String name, UserDAO userDAO) {
         this.userId = userId;
-        this.password = password;
         this.name = name;
+        this.userDAO = userDAO;
     }
 
-    public String getUserId() {
-        return userId;
+    public String getUserId() { return userId; }
+    public String getName() { return name; }
+
+    // --- Active Record 스타일 비즈니스 로직 ---
+
+    /**
+     * [이름 변경 로직] 객체 상태를 바꾸고 즉시 DB에 동기화한다.
+     */
+    public void updateName(String newName) {
+        if (newName == null || newName.trim().isEmpty()) {
+            throw new IllegalArgumentException("이름은 공백일 수 없습니다.");
+        }
+        this.name = newName;
+        // 💡 상태 변경 직후 객체가 스스로 창고지기(DAO)를 시켜 DB를 업데이트!
+        this.userDAO.update(this); 
     }
 
-    public String getPassword() {
-        return password;
+    /**
+     * [비밀번호 변경 로직] 메모리에 PW가 없으므로 DAO를 통해 DB에 직접 물어보고 바꾼다.
+     */
+    public void changePassword(String oldPassword, String newPassword) {
+        if (newPassword == null || newPassword.trim().isEmpty()) {
+            throw new IllegalArgumentException("새로운 비밀번호는 공백일 수 없습니다.");
+        }
+        
+        // 💡 (향후 UserDAO에 추가할 메서드) DB에 직접 기존 비밀번호가 맞는지 물어봄
+        // if (!this.userDAO.verifyPassword(this.userId, oldPassword)) {
+        //     throw new IllegalArgumentException("기존 비밀번호가 일치하지 않습니다.");
+        // }
+        
+        // 💡 검증 통과 시 비밀번호만 따로 업데이트 해달라고 DAO에 요청
+        // this.userDAO.updatePassword(this.userId, newPassword);
     }
 
-    public String getName() {
-        return name;
+    // --- static 로그인 팩토리 메서드 (3번 질문의 해결책) ---
+    /*
+    public static User login(String inputId, String inputPw, UserDAO dao) {
+        // 1. dao를 이용해 DB에서 아이디/비밀번호 검증
+        // 2. 일치하면 알맞은 User 자식 객체(MemberGamer 등)를 생성해서 반환
     }
-
-    public boolean checkPassword(String password) {
-        return this.password.equals(password);
-    }
+    */
 
     public abstract String getUserType();
 }
