@@ -31,3 +31,6 @@ sourceSets {
 application {
     mainClass = 'gds.Main'
 }
+wrapper {
+    gradleVersion = '8.5'
+}
