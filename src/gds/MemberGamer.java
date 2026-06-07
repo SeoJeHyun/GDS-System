@@ -1,5 +1,6 @@
 package gds;
 
+import dao.CartDAO;
 import dao.LibraryDAO;
 import dao.UserDAO;
 import dto.MemberGamerDTO;
@@ -17,16 +18,18 @@ public class MemberGamer extends User {
         super(userId, password, name, userDAO);
     }
 
-    public void setCart(Cart cart) {
-        this.cart = cart;
+    // [풍부한 도메인 모델] 외부(Service)에서 조립해주길 기다리지 않고, 도구를 받아 스스로 세팅합니다.
+    public void loadCart(CartDAO cartDAO) {
+        this.cart = new Cart(this.userId, cartDAO.findCartGamesByUserId(this.userId), cartDAO);
     }
 
     public Cart getCart() {
         return this.cart;
     }
 
-    public void setLibrary(Library library) {
-        this.library = library;
+    // [풍부한 도메인 모델] 라이브러리 역시 스스로 로드합니다.
+    public void loadLibrary(LibraryDAO libraryDAO) {
+        this.library = new Library(this.userId, libraryDAO.findGamesByUserId(this.userId), libraryDAO);
     }
 
     public Library getLibrary() {
