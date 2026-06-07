@@ -39,6 +39,14 @@ public class Game {
     public String getGameId() { return gameId; }
     public String getTitle() { return title; }
     public int getPrice() { return price; }
+    public String getDeveloperId() { return developerId; }
+    public String getDeveloperName() { return developerName; }
+    public String getGenre() { return genre; }
+    public boolean isDemoAvailable() { return demoAvailable; }
+    public String getDetail() { return detail; }
+    public String getFilePath() { return filePath; }
+    public int getFileSizeMb() { return fileSizeMb; }
+    public String getDeploymentStatus() { return deploymentStatus; }
 
     // 비즈니스 로직 (스스로 DB 업데이트)
     public void updatePrice(int newPrice) {
