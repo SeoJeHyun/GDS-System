@@ -11,13 +11,16 @@ public abstract class User {
     protected final String userId;
     protected String name;
     protected final UserDAO userDAO;
+    protected String password;
 
     public User(String userId, String name, UserDAO userDAO) {
         this.userId = userId;
         this.name = name;
         this.userDAO = userDAO;
     }
-
+    public String getPassword() {
+        return password;
+    }
     public String getUserId() { return userId; }
     public String getName() { return name; }
     public abstract String getUserType();
