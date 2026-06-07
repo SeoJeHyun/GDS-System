@@ -7,8 +7,8 @@ import dto.UserDTO;
 public class Developer extends User {
     private String companyName;
 
-    public Developer(String userId, String name, String companyName, UserDAO userDAO) {
-        super(userId, name, userDAO);
+    public Developer(String userId, String password, String name, String companyName, UserDAO userDAO) {
+        super(userId, password, name, userDAO);
         this.companyName = companyName;
     }
 

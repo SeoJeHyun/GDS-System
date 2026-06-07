@@ -7,8 +7,8 @@ import dto.UserDTO;
 public class Administrator extends User {
     private String department;
 
-    public Administrator(String userId, String name, String department, UserDAO userDAO) {
-        super(userId, name, userDAO);
+    public Administrator(String userId, String password, String name, String department, UserDAO userDAO) {
+        super(userId, password, name, userDAO);
         this.department = department;
     }
 
