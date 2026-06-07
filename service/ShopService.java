@@ -34,15 +34,12 @@ public class ShopService {
      * 키워드가 포함된 게임들만 찾아 DTO 리스트로 반환합니다.
      */
     public List<GameResponseDTO> searchGames(String keyword) {
-        // 원래는 GameDAO에 findByTitleContaining 기능이 구현되어 있어야 합니다.
-        // 현재는 DB 연결 뼈대만 있으므로, 우선 findAll()에서 메모리 필터링을 하는 방식으로 임시 구현합니다.
-        List<Game> allGames = gameDAO.findAll();
+        // 💡 [풍부한 창고지기 활용] 메모리 필터링을 버리고, DB 레벨에서 필터링된 데이터를 바로 가져옵니다.
+        List<Game> games = gameDAO.findByTitleContaining(keyword);
         List<GameResponseDTO> result = new ArrayList<>();
         
-        for (Game game : allGames) {
-            if (game.getTitle().toLowerCase().contains(keyword.toLowerCase())) {
-                result.add(game.toDTO());
-            }
+        for (Game game : games) {
+            result.add(game.toDTO());
         }
         return result;
     }

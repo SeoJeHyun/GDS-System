@@ -9,9 +9,9 @@ import java.util.List;
 
 public class Purchase {
     // 결제 상태 상수 정의 (명확한 상태 통제)
-    public static final String STATUS_PENDING = "PENDING";     // 결제 대기
-    public static final String STATUS_COMPLETED = "COMPLETED"; // 결제 완료
-    public static final String STATUS_FAILED = "FAILED";       // 결제 실패
+    public static final String STATUS_PENDING = "READY";     // 결제 대기 (DB 스키마 동기화)
+    public static final String STATUS_COMPLETED = "PAID";    // 결제 완료 (DB 스키마 동기화)
+    public static final String STATUS_FAILED = "FAILED";     // 결제 실패
 
     private final String purchaseId;
     private final String userId; 
@@ -59,7 +59,7 @@ public class Purchase {
         if (!STATUS_PENDING.equals(this.status)) {
             throw new IllegalStateException("결제 대기 상태에서만 실패 처리를 할 수 있습니다.");
         }
-        this.status = "FAILED";
+        this.status = STATUS_FAILED;
         this.purchaseDAO.updateStatus(this.purchaseId, this.status);
     }
     
@@ -77,4 +77,8 @@ public class Purchase {
     public String getUserId() { return userId; }
     public int getTotalAmount() { return totalAmount; }
     public String getStatus() { return status; }
+    
+    public List<Game> getPurchasedGames() { 
+        return new ArrayList<>(this.purchasedGames); 
+    }
 }

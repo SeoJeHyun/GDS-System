@@ -11,5 +11,8 @@ public interface CartDAO {
     void addCartItem(String userId, String gameId);
     
     // 3. 결제 완료 후 장바구니 전체 비우기 (DB 동기화)
-    void clearCart(String userId);
+    void deleteAll(String userId);
+
+    // 4. 장바구니에서 특정 게임 삭제 (DB 동기화)
+    void delete(String userId, String gameId);
 }

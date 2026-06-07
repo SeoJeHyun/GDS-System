@@ -2,6 +2,7 @@ package service; // 또는 gds 패키지
 
 import dao.UserDAO;
 import dto.UserDTO;
+import gds.MemberGamer;
 import gds.User;
 
 public class UserService {
@@ -22,6 +23,21 @@ public class UserService {
         }
 
         return user;
+    }
+
+    // [API 4. 회원가입] 지휘 로직
+    public User register(String userId, String rawPassword, String name) {
+        // 1. 중복 아이디 검사
+        if (userDAO.findById(userId) != null) {
+            throw new IllegalStateException("이미 사용 중인 아이디입니다.");
+        }
+
+        // 2. 신규 게이머 객체 생성 (일반 회원가입은 MemberGamer로 고정)
+        MemberGamer newUser = new MemberGamer(userId, rawPassword, name, userDAO);
+
+        // 3. DB에 저장 지시
+        userDAO.save(newUser);
+        return newUser;
     }
 
     public UserDTO getUserInfo(User user) {

@@ -27,7 +27,16 @@ public class Cart {
     // [풍부한 도메인 모델] 2. 결제 완료 후 스스로 장바구니 비우기
     public void clear() {
         this.games.clear();
-        this.cartDAO.clearCart(this.userId); // DB 동기화
+        this.cartDAO.deleteAll(this.userId); // DB 동기화
+    }
+
+    // [풍부한 도메인 모델] 장바구니에서 특정 게임 빼기 스스로 처리
+    public void removeGame(String gameId) {
+        boolean removed = this.games.removeIf(g -> g.getGameId().equals(gameId));
+        if (!removed) {
+            throw new IllegalStateException("장바구니에 존재하지 않는 게임입니다.");
+        }
+        this.cartDAO.delete(this.userId, gameId); // DB 동기화
     }
 
     // [풍부한 도메인 모델] 3. 장바구니에 게임 추가 (중복 검증 포함)

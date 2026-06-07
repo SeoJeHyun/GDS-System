@@ -13,8 +13,8 @@ public class GameDAOImpl implements GameDAO {
 
     @Override
     public Game findById(String gameId) {
-        // 게임 정보와 파일 경로를 JOIN해서 가져옴
-        String sql = "SELECT g.*, f.file_path FROM games g JOIN game_files f ON g.file_id = f.file_id WHERE g.game_id = ?";
+        // 💡 역정규화된 최신 games 스키마 단일 조회
+        String sql = "SELECT * FROM games WHERE game_id = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, gameId);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -29,8 +29,8 @@ public class GameDAOImpl implements GameDAO {
     private GameEntity mapRow(ResultSet rs) throws SQLException {
         return new GameEntity(rs.getString("game_id"), rs.getString("title"), rs.getString("developer_id"),
                               rs.getString("developer_name"), rs.getInt("price"), rs.getString("genre"),
-                              rs.getBoolean("demo_available"), rs.getString("detail"), rs.getString("file_path"),
-                              rs.getInt("file_size_mb"), rs.getString("deployment_status"));
+                              rs.getBoolean("demo_available"), rs.getString("detail"), 
+                              rs.getString("file_path"), 0, rs.getString("status_name")); // 최신 DB 스키마 완벽 반영
     }
 
     @Override public List<Game> findAll() { return new ArrayList<>(); }
@@ -39,4 +39,3 @@ public class GameDAOImpl implements GameDAO {
     @Override public List<Game> findByTitleContaining(String keyword) { return null; }
     @Override public List<Game> findByGenre(String genre) { return null; }
     @Override public void delete(String gameId) {}
-}

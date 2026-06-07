@@ -30,6 +30,9 @@ public abstract class User {
 
     public String getUserId() { return userId; }
     public String getName() { return name; }
+
+    // --- DAO가 DB 저장을 위해 값을 읽어갈 수 있도록 전용 Getter 추가 (Service 계층 사용 금지) ---
+    public String getPasswordForDAO() { return password; }
     public abstract String getUserType();
 
     // 정보 업데이트 비즈니스 로직 (스스로 DB 동기화)
