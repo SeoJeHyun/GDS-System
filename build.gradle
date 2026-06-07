@@ -1,0 +1,20 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.gds'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // 마법의 1줄: MySQL 통역사를 알아서 다운받고 프로젝트에 장착해 줍니다!
+    implementation 'com.mysql:mysql-connector-j:8.3.0'
+}
+
+application {
+    mainClass = 'Main'
+}
