@@ -1,0 +1,6 @@
+# gameId|title|developerName|price|genre|demoAvailable|detail|fileName|fileSizeMB|distributionStatus
+game1|Game One|Sample Dev Studio|10000|Action|true|First sample action game.|game1.exe|500|RELEASED
+game2|Game Two|Sample Dev Studio|15000|Adventure|true|Second sample adventure game.|game2.exe|650|RELEASED
+game3|Game Three|Sample Dev Studio|20000|RPG|false|Third sample RPG game.|game3.exe|1200|RELEASED
+game4|Game Four|Sample Dev Studio|25000|Simulation|false|Fourth sample simulation game.|game4.exe|900|RELEASED
+game5|Game Five|Sample Dev Studio|30000|Strategy|true|Fifth sample strategy game.|game5.exe|750|RELEASED

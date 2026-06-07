@@ -1,0 +1,3 @@
+# paymentMethodId|methodName
+payment1|Sample Card
+payment2|Sample Point

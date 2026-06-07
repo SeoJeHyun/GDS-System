@@ -1,0 +1,2 @@
+# userId|password|name|companyName
+dev|dev|Sample Developer|Sample Dev Studio

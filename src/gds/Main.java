@@ -1,3 +1,5 @@
+package gds;
+
 import controller.ShopController;
 import controller.UserController;
 import dao.*;
@@ -73,7 +75,7 @@ public class Main {
             // System.out.println("응답: " + cartRes.getMessage());
 
         } catch (SQLException e) {
-            System.err.println("\n❌ DB 연결 실패: PostgreSQL 서버가 켜져 있는지, ID/PW가 맞는지 확인하세요!");
+            System.err.println("\n❌ DB 연결 실패: MySQL 서버가 켜져 있는지, ID/PW가 맞는지 확인하세요!");
             System.err.println("에러 메시지: " + e.getMessage());
         }
     }
