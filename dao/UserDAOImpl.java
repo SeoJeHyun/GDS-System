@@ -78,10 +78,6 @@ public class UserDAOImpl implements UserDAO {
 
             // 2. 서브타입에 따른 추가 데이터 완벽 저장 처리
             if (user instanceof MemberGamer) {
-                String insertGamerSql = "INSERT INTO member_gamers (user_id) VALUES (?)";
-                String insertCartSql = "INSERT INTO carts (user_id) VALUES (?)";
-                String insertLibrarySql = "INSERT INTO libraries (user_id) VALUES (?)";
-                
                 try (PreparedStatement pstmt = conn.prepareStatement(insertGamerSql)) {
                     pstmt.setString(1, user.getUserId());
                     pstmt.executeUpdate();

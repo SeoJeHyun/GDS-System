@@ -39,3 +39,4 @@ public class GameDAOImpl implements GameDAO {
     @Override public List<Game> findByTitleContaining(String keyword) { return null; }
     @Override public List<Game> findByGenre(String genre) { return null; }
     @Override public void delete(String gameId) {}
+}
