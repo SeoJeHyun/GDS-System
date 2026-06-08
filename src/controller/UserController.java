@@ -5,8 +5,12 @@ import dto.LoginRequestDTO;
 import dto.RegisterRequestDTO;
 import dto.UserDTO;
 import gds.User;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 import service.UserService;
 
+@RestController
 public class UserController {
     private final UserService userService;
 
@@ -17,7 +21,8 @@ public class UserController {
 
     // [API 3. 로그인]
     // 프론트엔드로부터 JSON -> LoginRequestDTO 변환되어 들어왔다고 가정합니다.
-    public ApiResponseDTO<UserDTO> login(LoginRequestDTO request) {
+    @PostMapping("/api/login")
+    public ApiResponseDTO<UserDTO> login(@RequestBody LoginRequestDTO request) {
         try {
             // 주방장에게 로그인 검증 지시
             User user = userService.login(request.getUserId(), request.getPassword());
@@ -35,7 +40,8 @@ public class UserController {
     }
 
     // [API 4. 회원가입]
-    public ApiResponseDTO<UserDTO> register(RegisterRequestDTO request) {
+    @PostMapping("/api/register")
+    public ApiResponseDTO<UserDTO> register(@RequestBody RegisterRequestDTO request) {
         try {
             // 주방장에게 회원가입 지시
             User newUser = userService.register(request.getUserId(), request.getPassword(), request.getName());

@@ -1,9 +1,13 @@
 package controller;
 
+import dao.CartDAO;
+import dao.GameDAO;
 import dto.ApiResponseDTO;
 import dto.CartRequestDTO;
 import dto.PurchaseRequestDTO;
 import dto.GameResponseDTO;
+import gds.Game;
+import org.springframework.web.bind.annotation.*;
 import service.ShopService;
 import service.CartService;
 import service.PurchaseService;
@@ -11,20 +15,23 @@ import service.PurchaseService;
 import java.util.List;
 import java.util.Map;
 
+@RestController
 public class ShopController {
     private final ShopService shopService;
     private final CartService cartService;
     private final PurchaseService purchaseService;
+    private final GameDAO gameDAO;
+    private final CartDAO cartDAO;
 
-    // 3명의 주방장을 모두 주입받습니다.
-    public ShopController(ShopService shopService, CartService cartService, PurchaseService purchaseService) {
+    public ShopController(ShopService shopService, CartService cartService, PurchaseService purchaseService, GameDAO gameDAO, CartDAO cartDAO) {
         this.shopService = shopService;
         this.cartService = cartService;
         this.purchaseService = purchaseService;
+        this.gameDAO = gameDAO;
+        this.cartDAO = cartDAO;
     }
 
-    // [API 1. 게임 목록 전체 보기]
-    // (이 API는 GET 요청이라 RequestDTO가 필요 없습니다!)
+    @GetMapping("/api/games")
     public ApiResponseDTO<List<GameResponseDTO>> getGames() {
         try {
             List<GameResponseDTO> games = shopService.getAllGames();
@@ -34,8 +41,23 @@ public class ShopController {
         }
     }
 
-    // [API 5. 장바구니 담기 요청]
-    public ApiResponseDTO<GameResponseDTO> addToCart(String userId, CartRequestDTO request) {
+    @GetMapping("/api/games/search")
+    public ApiResponseDTO<List<Game>> searchGames(@RequestParam String keyword) {
+        List<Game> games = gameDAO.findByTitleContaining(keyword);
+        if (games.isEmpty()) return ApiResponseDTO.fail("검색 결과가 없습니다.");
+        return ApiResponseDTO.success("게임 검색 성공", games);
+    }
+
+    @GetMapping("/api/games/{gameId}")
+    public ApiResponseDTO<Game> getGameDetail(@PathVariable String gameId) {
+        Game g = gameDAO.findById(gameId);
+        if (g == null) return ApiResponseDTO.fail("게임을 찾을 수 없습니다.");
+        return ApiResponseDTO.success("게임 상세 조회 성공", g);
+    }
+
+    @PostMapping("/api/cart")
+    public ApiResponseDTO<GameResponseDTO> addToCart(@RequestBody CartRequestDTO request) {
+        String userId = "user"; // 💡 세션 인증 전까지 하드코딩
         try {
             GameResponseDTO addedGame = cartService.addCartItem(userId, request.getGameId());
             return ApiResponseDTO.success("장바구니에 게임이 추가되었습니다.", addedGame);
@@ -44,8 +66,16 @@ public class ShopController {
         }
     }
 
-    // [API 4. 장바구니 구매 요청] (위변조 검증)
-    public ApiResponseDTO<Object> purchaseCart(String userId, PurchaseRequestDTO request) {
+    @DeleteMapping("/api/cart/{gameId}")
+    public ApiResponseDTO<Object> removeFromCart(@PathVariable String gameId) {
+        String userId = "user"; // 💡 세션 인증 전까지 하드코딩
+        cartDAO.delete(userId, gameId);
+        return ApiResponseDTO.success("장바구니에서 게임이 삭제되었습니다.", Map.of("id", gameId));
+    }
+
+    @PostMapping("/api/purchase")
+    public ApiResponseDTO<Object> purchaseCart(@RequestBody PurchaseRequestDTO request) {
+        String userId = "user"; // 💡 세션 인증 전까지 하드코딩
         try {
             Map<String, Object> result = purchaseService.verifyAndPurchase(userId, request);
             return ApiResponseDTO.success("결제 검증 및 구매 처리가 완료되었습니다.", result);
