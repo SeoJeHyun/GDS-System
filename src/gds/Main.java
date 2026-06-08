@@ -48,7 +48,8 @@ public class Main {
     @Bean public ShopService shopService(GameDAO gameDAO) { return new ShopService(gameDAO); }
     @Bean public CartService cartService(UserDAO userDAO, GameDAO gameDAO, CartDAO cartDAO, LibraryDAO libraryDAO) { return new CartService(userDAO, gameDAO, cartDAO, libraryDAO); }
     @Bean public PurchaseService purchaseService(UserDAO userDAO, CartDAO cartDAO, LibraryDAO libraryDAO, PurchaseDAO purchaseDAO, PaymentDAO paymentDAO, TossPaymentGateway tossPaymentGateway) { return new PurchaseService(userDAO, cartDAO, libraryDAO, purchaseDAO, paymentDAO, tossPaymentGateway); }
+    @Bean public LibraryService libraryService(UserDAO userDAO, LibraryDAO libraryDAO) { return new LibraryService(userDAO, libraryDAO); }
 
-    @Bean public UserController userController(UserService userService) { return new UserController(userService); }
+    @Bean public UserController userController(UserService userService, LibraryService libraryService) { return new UserController(userService, libraryService); }
     @Bean public ShopController shopController(ShopService shopService, CartService cartService, PurchaseService purchaseService, GameDAO gameDAO, CartDAO cartDAO) { return new ShopController(shopService, cartService, purchaseService, gameDAO, cartDAO); }
 }

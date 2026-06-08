@@ -1,7 +1,7 @@
 # 게임 관련
 1. 게임 목록 전체 보기
-## GET(세션아이디, 토큰)/Response(전체 게임 정보 - 이미 구매한 게임: 100개단위 전송)
-## 특징: 이미 구매한 게임은 나오지 않음, 
+## GET /api/games
+## 특징: 누구나 조회 가능 (세션 인증 생략)
 ## Json
 {
   "status": "success",
@@ -57,36 +57,30 @@
   "fileSizeGb": 45.5,
   "distributionStatus": "released"
 }
-4. 장바구니 구매 요청
-# POST(세션아이디, 토큰, paymentKey, orderId, amount) / Response(결제 검증 완료 상태 및 상세 내역)
-# 클라이언트가 PG사 결제창을 통해 결제를 마친 후, 발급받은 결제 정보(paymentKey, orderId, amount)를 본 API를 통해 백엔드로 전송함. 
-# 위변조 검증: 백엔드 서버는 세션을 통해 해당 유저의 장바구니 목록을 조회하여 실제 결제되어야 할 총액을 계산한 뒤, 클라이언트가 보낸 amount 및 PG사 서버의 결제 내역과 일치하는지 교차 검증함.
+4. 장바구니 결제(구매) 확정 요청 (토스페이먼츠 연동)
+## POST /api/purchase
+## Request Body (userId, paymentKey, orderId, amount)
 
-# 금액이 일치하고 검증이 성공하면, 장바구니에 있던 모든 게임이 유저의 라이브러리에 즉시 추가되며 장바구니는 자동으로 비워짐.
+## 특징: 프론트엔드가 토스 위젯에서 결제를 마친 후 받은 결제 키를 백엔드로 보냅니다.
+## 백엔드는 도메인 객체를 통해 총액 위변조를 검증하고, 토스 서버와 통신하여 최종 승인을 받습니다.
+## 승인 성공 시 게임은 라이브러리에 추가되고 장바구니는 비워집니다.
 
-# 만약 금액이 일치하지 않는 등 검증 실패 시, 백엔드에서 즉시 PG사 API를 호출하여 결제 강제 취소(환불) 처리를 하고 에러 응답을 반환함.
+## Request Json (임시 인증: userId 직접 전송)
+{
+  "userId": "user1",
+  "paymentKey": "toss_abc123",
+  "orderId": "order_20260603_1122",
+  "amount": 37000
+}
 
-# json
+## Response Json (성공 시)
 {
   "status": "success",
   "message": "결제 검증 및 구매 처리가 완료되었습니다.",
   "data": {
-    "transactionId": "tx_20260603_004",
+    "transactionId": "toss_abc123",
     "orderId": "order_20260603_1122",
-    "totalPaidAmount": 37000,
-    "purchaseDate": "2026-06-03T19:12:00Z",
-    "purchasedGames": [
-      {
-        "id": "game1",
-        "title": "Game One",
-        "price": 15000
-      },
-      {
-        "id": "game2",
-        "title": "Game Two",
-        "price": 22000
-      }
-    ]
+    "totalPaidAmount": 37000
   }
 }
 
@@ -175,7 +169,7 @@
 
 ## 7. 구매한 게임 파일 다운로드 요청
 
-## GET(세션아이디, 토큰, 게임아이디) / Response(구매한 게임 파일)
+## GET /api/users/{userId}/library/{gameId}/download
 ## 특징: 라이브러리에 있는 게임만 다운로드 가능. 구매하지 않은 게임의 다운로드를 요청하면 실패 응답을 반환함. 현재 실제 게임 파일이 없으므로 txt 파일 다운로드로 대체함.
 
 ## Response
@@ -213,12 +207,9 @@ Description: RPG 호러 게임입니다.
 
 # 유저 관련
 
-## 4. 각 유저의 장바구니 목록
-# POST(세션아이디, 토큰)
+## 8. 각 유저별 구매한 게임 목록 (라이브러리)
 
-## 2. 각 유저별 구매한 게임 목록
-
-## GET(세션아이디, 토큰, 유저아이디, page, size) / Response(해당 유저가 구매한 게임 목록 - 게임 목록 조회와 유사한 형태, 다운로드 가능 정보 포함)
+## GET /api/users/{userId}/library?page={page}&size={size}
 
 ## 특징: 게임 목록 전체 보기와 유사한 형태로 구매한 게임 목록을 반환함. 단, 라이브러리는 이미 구매한 게임만 보여주며 각 게임마다 다운로드 가능 여부와 다운로드 URL을 포함함.
 
