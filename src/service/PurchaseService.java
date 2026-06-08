@@ -48,7 +48,8 @@ public class PurchaseService {
 
         // 3. 결제 트랜잭션(Payment) 객체 생성 및 토스 게이트웨이 위임
         String paymentId = "pay_" + UUID.randomUUID().toString().substring(0, 8);
-        Payment payment = new Payment(paymentId, purchase.getPurchaseId(), "TOSS", request.getAmount(), "READY", paymentDAO);
+        // 💡 "TOSS" 대신 DB(payment_methods 테이블)에 존재하는 "payment1"을 사용해야 외래키 제약조건(FK) 에러가 발생하지 않습니다.
+        Payment payment = new Payment(paymentId, purchase.getPurchaseId(), "payment1", request.getAmount(), "READY", paymentDAO);
         paymentDAO.save(payment); // 결제 시도 이력 DB 안전 저장
 
         // Payment 도메인 스스로 토스 승인 처리 지시 (캡슐화 완벽 달성)

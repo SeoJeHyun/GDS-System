@@ -1,197 +1,221 @@
-// 기존 GDS-System 백엔드 전용 프론트 API 어댑터입니다.
-// 백엔드가 같은 Spring Boot에서 정적 파일을 제공하면 ''로 바꿔도 됩니다.
-const API_BASE_URL = 'http://223.130.133.117:8080';
-console.log('[GDS FRONT] API_BASE_URL =', API_BASE_URL);
+const DEFAULT_API_BASE_URL = 'http://223.130.133.117:8080';
+const API_BASE_STORAGE_KEY = 'gdsApiBaseUrl';
+const USER_STORAGE_KEY = 'gdsUser';
+
+function getApiBaseUrl() {
+  return (localStorage.getItem(API_BASE_STORAGE_KEY) || DEFAULT_API_BASE_URL).replace(/\/$/, '');
+}
+
+function setApiBaseUrl(value) {
+  const normalized = (value || DEFAULT_API_BASE_URL).trim().replace(/\/$/, '');
+  localStorage.setItem(API_BASE_STORAGE_KEY, normalized);
+  return normalized;
+}
+
+function url(path) {
+  return `${getApiBaseUrl()}${path}`;
+}
 
 function getSession() {
   return {
-    sessionId: localStorage.getItem('gdsSessionId') || '',
-    token: localStorage.getItem('gdsAccessToken') || '',
-    user: JSON.parse(localStorage.getItem('gdsUser') || 'null')
+    user: JSON.parse(localStorage.getItem(USER_STORAGE_KEY) || 'null')
   };
 }
 
 function saveSessionFromLogin(response) {
   const data = response?.data;
-  // 실제 GDS-System은 ApiResponseDTO<UserDTO> 형태로 user DTO만 반환할 수 있음.
-  const user = data?.user || data;
-  if (!user) return;
-  const normalized = normalizeUser(user);
-  localStorage.setItem('gdsUser', JSON.stringify(normalized));
-  localStorage.setItem('gdsSessionId', data?.sessionId || 'local-session');
-  localStorage.setItem('gdsAccessToken', data?.accessToken || 'local-token');
+  if (!data) return null;
+
+  const user = normalizeUser(data);
+  localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+  return user;
 }
 
 function logout() {
-  localStorage.removeItem('gdsUser');
-  localStorage.removeItem('gdsSessionId');
-  localStorage.removeItem('gdsAccessToken');
-  localStorage.removeItem('gdsCartView');
-  location.href = './index.html';
+  localStorage.removeItem(USER_STORAGE_KEY);
 }
 
 function authHeaders() {
-  const { sessionId, token } = getSession();
-  const headers = { 'Content-Type': 'application/json' };
-  if (sessionId) headers['Session-Id'] = sessionId;
-  if (token) headers.Authorization = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-  return headers;
-}
-
-function url(path) {
-  return `${API_BASE_URL}${path}`;
+  return {
+    'Content-Type': 'application/json'
+  };
 }
 
 async function request(path, options = {}) {
-  const res = await fetch(url(path), {
-    ...options,
-    headers: { ...authHeaders(), ...(options.headers || {}) }
-  });
+  let response;
 
-  const contentType = res.headers.get('content-type') || '';
-  if (!res.ok) {
-    let msg = `${res.status} ${res.statusText}`;
-    if (contentType.includes('application/json')) {
-      const body = await res.json().catch(() => null);
-      msg = body?.message || msg;
-    } else {
-      const text = await res.text().catch(() => '');
-      if (text) msg = text.slice(0, 200);
-    }
-    throw new Error(msg);
+  try {
+    response = await fetch(url(path), {
+      ...options,
+      headers: {
+        ...authHeaders(),
+        ...(options.headers || {})
+      }
+    });
+  } catch (error) {
+    throw new Error('서버에 연결할 수 없습니다. 백엔드 실행 상태, API 주소, CORS 설정을 확인하세요.');
   }
 
-  if (contentType.includes('application/json')) return res.json();
-  return res;
+  const contentType = response.headers.get('content-type') || '';
+
+  if (!response.ok) {
+    const errorMessage = await readErrorMessage(response, contentType);
+    throw new Error(errorMessage);
+  }
+
+  if (contentType.includes('application/json')) {
+    return response.json();
+  }
+
+  return response;
+}
+
+async function readErrorMessage(response, contentType) {
+  if (contentType.includes('application/json')) {
+    const body = await response.json().catch(() => null);
+    return body?.message || `${response.status} ${response.statusText}`;
+  }
+
+  const text = await response.text().catch(() => '');
+  return text || `${response.status} ${response.statusText}`;
+}
+
+function assertSuccess(response, fallbackMessage) {
+  if (response?.status && response.status !== 'success') {
+    throw new Error(response.message || fallbackMessage || '요청 실패');
+  }
+  return response;
+}
+
+function unwrapList(response) {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.data)) return response.data;
+  return [];
 }
 
 function normalizeUser(user) {
   return {
-    id: user.id || user.userId || user.user_id || '',
+    userId: user.userId || user.id || user.user_id || '',
     name: user.name || '',
     userType: user.userType || user.user_type || ''
   };
 }
 
 function normalizeGame(game) {
-  const genre = Array.isArray(game.genre) ? game.genre : [game.genre].filter(Boolean);
   return {
-    id: game.id || game.gameId || game.game_id || '',
+    gameId: game.gameId || game.id || game.game_id || '',
     title: game.title || '',
-    developer: game.developer || game.developerName || game.developer_name || '',
-    genre,
+    developerName: game.developerName || game.developer || game.developer_name || '',
     price: Number(game.price || 0),
-    demo: game.demo || (game.demoAvailable || game.isDemoAvailable ? 'available' : 'none'),
+    genre: game.genre || '',
     distributionStatus: game.distributionStatus || game.deploymentStatus || game.statusName || '',
-    description: game.description || game.detail || '',
-    fileSizeGb: game.fileSizeGb ?? game.fileSizeGB ?? 0,
-    isDownloadable: Boolean(game.isDownloadable),
-    downloadUrl: game.downloadUrl || ''
+    detail: game.detail || game.description || '',
+    ageRating: game.ageRating ?? game.age_rating ?? '',
+    demoAvailable: Boolean(game.demoAvailable ?? game.demo_available ?? false)
   };
 }
 
-function unwrapList(response) {
-  if (Array.isArray(response)) return response;
-  if (Array.isArray(response?.data)) return response.data;
-  if (Array.isArray(response?.data?.data)) return response.data.data;
-  return [];
-}
-
-function unwrapStatus(response) {
-  return response?.status || 'success';
-}
-
-function unwrapMessage(response, fallback = '') {
-  return response?.message || fallback;
+function requireLogin() {
+  const { user } = getSession();
+  if (!user?.userId) {
+    throw new Error('로그인이 필요합니다.');
+  }
+  return user;
 }
 
 const api = {
+  getApiBaseUrl,
+  setApiBaseUrl,
+
   async login(userId, password) {
-    const res = await request('/api/login', {
+    const response = await request('/api/login', {
       method: 'POST',
       body: JSON.stringify({ userId, password })
     });
-    if (unwrapStatus(res) !== 'success') throw new Error(unwrapMessage(res, '로그인 실패'));
-    saveSessionFromLogin(res);
-    return res;
+
+    assertSuccess(response, '로그인 실패');
+    const user = saveSessionFromLogin(response);
+    return { response, user };
   },
 
-  async signup(userId, password, name) {
-    return request('/api/register', {
+  async register(userId, password, name) {
+    const response = await request('/api/register', {
       method: 'POST',
       body: JSON.stringify({ userId, password, name })
     });
+
+    return assertSuccess(response, '회원가입 실패');
   },
 
   async getGames() {
-    const res = await request('/api/games');
-    return unwrapList(res).map(normalizeGame);
+    const response = await request('/api/games');
+    assertSuccess(response, '게임 목록 조회 실패');
+    return unwrapList(response).map(normalizeGame);
   },
 
   async searchGames(keyword) {
-    const q = encodeURIComponent(keyword || '');
-    const res = await request(`/api/games/search?keyword=${q}`);
-    return unwrapList(res).map(normalizeGame);
+    const response = await request(`/api/games/search?keyword=${encodeURIComponent(keyword)}`);
+    assertSuccess(response, '게임 검색 실패');
+    return unwrapList(response).map(normalizeGame);
   },
 
   async getGameDetail(gameId) {
-    const res = await request(`/api/games/${encodeURIComponent(gameId)}`);
-    return normalizeGame(res?.data || res);
+    const response = await request(`/api/games/${encodeURIComponent(gameId)}`);
+    assertSuccess(response, '게임 상세 조회 실패');
+    return normalizeGame(response.data || {});
   },
 
   async getCart() {
-    const { user } = getSession();
-    if (!user || !user.id) throw new Error('로그인이 필요합니다.');
-
-    // 백엔드 명세에 맞게 쿼리 파라미터로 userId 전달
-    const res = await request(`/api/cart?userId=${encodeURIComponent(user.id)}`);
-    return unwrapList(res).map(normalizeGame);
+    const user = requireLogin();
+    const response = await request(`/api/cart?userId=${encodeURIComponent(user.userId)}`);
+    assertSuccess(response, '장바구니 조회 실패');
+    return unwrapList(response).map(normalizeGame);
   },
 
   async addCart(gameId) {
-    const { user } = getSession();
-    if (!user || !user.id) throw new Error('로그인이 필요합니다.');
-
-    const res = await request('/api/cart', {
+    const user = requireLogin();
+    const response = await request('/api/cart', {
       method: 'POST',
-      body: JSON.stringify({ userId: user.id, gameId })
+      body: JSON.stringify({ userId: user.userId, gameId })
     });
-    return res;
+
+    return assertSuccess(response, '장바구니 추가 실패');
   },
 
   async deleteCart(gameId) {
-    const { user } = getSession();
-    if (!user || !user.id) throw new Error('로그인이 필요합니다.');
+    const user = requireLogin();
+    const response = await request(`/api/cart/${encodeURIComponent(gameId)}?userId=${encodeURIComponent(user.userId)}`, {
+      method: 'DELETE'
+    });
 
-    // 백엔드 명세에 맞게 쿼리 파라미터로 userId 전달
-    return request(`/api/cart/${encodeURIComponent(gameId)}?userId=${encodeURIComponent(user.id)}`, { method: 'DELETE' });
+    return assertSuccess(response, '장바구니 삭제 실패');
   },
 
-  async purchase(amount = 0) {
-    const { user } = getSession();
-    if (!user || !user.id) throw new Error('로그인이 필요합니다.');
-
-    return request('/api/purchase', {
+  async purchase({ paymentKey, orderId, amount }) {
+    const user = requireLogin();
+    const response = await request('/api/purchase', {
       method: 'POST',
       body: JSON.stringify({
-        userId: user.id,
-        paymentKey: `payment_${Date.now()}`,
-        orderId: `order_${Date.now()}`,
-        amount
+        userId: user.userId,
+        paymentKey,
+        orderId,
+        amount: Number(amount || 0)
       })
     });
+
+    return assertSuccess(response, '결제 처리 실패');
   },
 
-  async getLibrary(userId, page = 1, size = 100) {
-    const res = await request(`/api/users/${encodeURIComponent(userId)}/library?page=${page}&size=${size}`);
-    return {
-      ...res,
-      data: unwrapList(res).map(normalizeGame)
-    };
+  async getLibrary(page = 1, size = 100) {
+    const user = requireLogin();
+    const response = await request(`/api/users/${encodeURIComponent(user.userId)}/library?page=${page}&size=${size}`);
+    assertSuccess(response, '라이브러리 조회 실패');
+    return unwrapList(response).map(normalizeGame);
   },
 
-  downloadUrl(userId, gameId) {
-    return url(`/api/users/${encodeURIComponent(userId)}/library/${encodeURIComponent(gameId)}/download`);
+  getDownloadUrl(gameId) {
+    const user = requireLogin();
+    return url(`/api/users/${encodeURIComponent(user.userId)}/library/${encodeURIComponent(gameId)}/download`);
   }
 };
 

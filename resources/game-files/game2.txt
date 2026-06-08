@@ -1,0 +1,4 @@
+GDS Temporary Game File
+=======================
+Game ID: game2
+임시 게임 파일입니다.

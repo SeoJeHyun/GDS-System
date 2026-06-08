@@ -1,5 +1,6 @@
 package gds;
-
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import controller.ShopController;
 import controller.UserController;
 import dao.*;
@@ -15,7 +16,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"gds", "controller", "service", "dao"})
 public class Main {
 
     public static void main(String[] args) {
@@ -52,4 +53,16 @@ public class Main {
 
     @Bean public UserController userController(UserService userService, LibraryService libraryService) { return new UserController(userService, libraryService); }
     @Bean public ShopController shopController(ShopService shopService, CartService cartService, PurchaseService purchaseService, GameDAO gameDAO, CartDAO cartDAO) { return new ShopController(shopService, cartService, purchaseService, gameDAO, cartDAO); }
+    @Bean
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**") // 서버의 모든 API 주소(/**)에 대하여
+                        .allowedOrigins("*") // 모든 프론트엔드 출처의 접근을 허용하고
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // 브라우저의 정찰병(OPTIONS)도 무사통과시킵니다.
+                        .allowedHeaders("*");
+            }
+        };
+    }
 }
