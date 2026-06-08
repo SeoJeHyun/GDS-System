@@ -3,36 +3,36 @@ package service;
 import dao.CartDAO;
 import dao.LibraryDAO;
 import dao.PurchaseDAO;
+import dao.PaymentDAO;
 import dao.UserDAO;
 import dto.PurchaseRequestDTO;
 import gds.Game;
 import gds.MemberGamer;
+import gds.Payment;
 import gds.Purchase;
 import gds.User;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestTemplate;
+import service.TossPaymentGateway;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class PurchaseService {
     private final UserDAO userDAO;
     private final CartDAO cartDAO;
     private final LibraryDAO libraryDAO;
     private final PurchaseDAO purchaseDAO;
+    private final PaymentDAO paymentDAO;
+    private final TossPaymentGateway tossGateway;
 
-    public PurchaseService(UserDAO userDAO, CartDAO cartDAO, LibraryDAO libraryDAO, PurchaseDAO purchaseDAO) {
+    public PurchaseService(UserDAO userDAO, CartDAO cartDAO, LibraryDAO libraryDAO, PurchaseDAO purchaseDAO, PaymentDAO paymentDAO, TossPaymentGateway tossGateway) {
         this.userDAO = userDAO;
         this.cartDAO = cartDAO;
         this.libraryDAO = libraryDAO;
         this.purchaseDAO = purchaseDAO;
+        this.paymentDAO = paymentDAO;
+        this.tossGateway = tossGateway;
     }
 
     public Map<String, Object> verifyAndPurchase(String userId, PurchaseRequestDTO request) {
@@ -46,34 +46,17 @@ public class PurchaseService {
         // 2. 크로스 체크 (위변조 검증) - 도메인 객체에게 검증 위임 (실패 시 스스로 fail 처리 및 예외 던짐)
         purchase.verifyAmount(request.getAmount());
 
-        // 3. 토스페이먼츠 승인(Confirm) API 서버 투 서버 통신
-        try {
-            RestTemplate restTemplate = new RestTemplate();
-            String tossConfirmUrl = "https://api.tosspayments.com/v1/payments/confirm";
-            
-            HttpHeaders headers = new HttpHeaders();
-            String secretKey = "test_sk_zXLkKEypNArWmo50nX3lmeaxYG5R"; 
-            String encodedAuth = Base64.getEncoder().encodeToString((secretKey + ":").getBytes(StandardCharsets.UTF_8));
-            
-            headers.set("Authorization", "Basic " + encodedAuth);
-            headers.set("Content-Type", "application/json");
+        // 3. 결제 트랜잭션(Payment) 객체 생성 및 토스 게이트웨이 위임
+        String paymentId = "pay_" + UUID.randomUUID().toString().substring(0, 8);
+        Payment payment = new Payment(paymentId, purchase.getPurchaseId(), "TOSS", request.getAmount(), "READY", paymentDAO);
+        paymentDAO.save(payment); // 결제 시도 이력 DB 안전 저장
 
-            Map<String, Object> params = new HashMap<>();
-            params.put("paymentKey", request.getPaymentKey());
-            params.put("orderId", request.getOrderId());
-            params.put("amount", request.getAmount());
-
-            HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(params, headers);
-            ResponseEntity<Map> response = restTemplate.exchange(tossConfirmUrl, HttpMethod.POST, requestEntity, Map.class);
-            
-            if (response.getStatusCode() != HttpStatus.OK) {
-                purchase.fail(); // 도메인 객체 스스로 실패 상태 전이 및 DB 동기화
-                throw new IllegalStateException("결제 승인에 실패했습니다.");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            purchase.fail(); // 도메인 객체 스스로 실패 상태 전이 및 DB 동기화
-            throw new IllegalStateException("결제 승인 중 통신 오류가 발생했습니다.");
+        // Payment 도메인 스스로 토스 승인 처리 지시 (캡슐화 완벽 달성)
+        boolean isSuccess = payment.processToss(tossGateway, request.getPaymentKey(), request.getOrderId());
+        
+        if (!isSuccess) {
+            purchase.fail(); // 영수증도 실패 처리
+            throw new IllegalStateException("결제 승인에 실패했습니다.");
         }
 
         // 4. 검증 통과! 결제 완료 상태로 전이 (도메인 객체 스스로 DB 업데이트)

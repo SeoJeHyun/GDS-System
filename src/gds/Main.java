@@ -41,11 +41,13 @@ public class Main {
     @Bean public CartDAO cartDAO(Connection conn, GameDAO gameDAO) { return new CartDAOImpl(conn, gameDAO); }
     @Bean public LibraryDAO libraryDAO(Connection conn, GameDAO gameDAO) { return new LibraryDAOImpl(conn, gameDAO); }
     @Bean public PurchaseDAO purchaseDAO(Connection conn, GameDAO gameDAO) { return new PurchaseDAOImpl(conn, gameDAO); }
+    @Bean public PaymentDAO paymentDAO(Connection conn) { return new PaymentDAOImpl(conn); }
+    @Bean public TossPaymentGateway tossPaymentGateway() { return new TossPaymentGatewayImpl(); }
 
     @Bean public UserService userService(UserDAO userDAO) { return new UserService(userDAO); }
     @Bean public ShopService shopService(GameDAO gameDAO) { return new ShopService(gameDAO); }
     @Bean public CartService cartService(UserDAO userDAO, GameDAO gameDAO, CartDAO cartDAO, LibraryDAO libraryDAO) { return new CartService(userDAO, gameDAO, cartDAO, libraryDAO); }
-    @Bean public PurchaseService purchaseService(UserDAO userDAO, CartDAO cartDAO, LibraryDAO libraryDAO, PurchaseDAO purchaseDAO) { return new PurchaseService(userDAO, cartDAO, libraryDAO, purchaseDAO); }
+    @Bean public PurchaseService purchaseService(UserDAO userDAO, CartDAO cartDAO, LibraryDAO libraryDAO, PurchaseDAO purchaseDAO, PaymentDAO paymentDAO, TossPaymentGateway tossPaymentGateway) { return new PurchaseService(userDAO, cartDAO, libraryDAO, purchaseDAO, paymentDAO, tossPaymentGateway); }
 
     @Bean public UserController userController(UserService userService) { return new UserController(userService); }
     @Bean public ShopController shopController(ShopService shopService, CartService cartService, PurchaseService purchaseService, GameDAO gameDAO, CartDAO cartDAO) { return new ShopController(shopService, cartService, purchaseService, gameDAO, cartDAO); }

@@ -57,7 +57,7 @@ public class ShopController {
 
     @PostMapping("/api/cart")
     public ApiResponseDTO<GameResponseDTO> addToCart(@RequestBody CartRequestDTO request) {
-        String userId = "user"; // 💡 세션 인증 전까지 하드코딩
+        String userId = request.getUserId(); // 💡 임시: 프론트에서 보낸 userId 사용
         try {
             GameResponseDTO addedGame = cartService.addCartItem(userId, request.getGameId());
             return ApiResponseDTO.success("장바구니에 게임이 추가되었습니다.", addedGame);
@@ -67,15 +67,15 @@ public class ShopController {
     }
 
     @DeleteMapping("/api/cart/{gameId}")
-    public ApiResponseDTO<Object> removeFromCart(@PathVariable String gameId) {
-        String userId = "user"; // 💡 세션 인증 전까지 하드코딩
+    public ApiResponseDTO<Object> removeFromCart(@PathVariable String gameId, @RequestParam String userId) {
+        // 💡 임시: DELETE 요청은 RequestBody를 잘 쓰지 않으므로 쿼리 파라미터(?userId=...)로 받음
         cartDAO.delete(userId, gameId);
         return ApiResponseDTO.success("장바구니에서 게임이 삭제되었습니다.", Map.of("id", gameId));
     }
 
     @PostMapping("/api/purchase")
     public ApiResponseDTO<Object> purchaseCart(@RequestBody PurchaseRequestDTO request) {
-        String userId = "user"; // 💡 세션 인증 전까지 하드코딩
+        String userId = request.getUserId(); // 💡 임시: 프론트에서 보낸 userId 사용
         try {
             Map<String, Object> result = purchaseService.verifyAndPurchase(userId, request);
             return ApiResponseDTO.success("결제 검증 및 구매 처리가 완료되었습니다.", result);
